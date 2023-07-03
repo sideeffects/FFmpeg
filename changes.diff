@@ -1,0 +1,142 @@
+diff -ru ffmpeg-6.0.0/configure ffmpeg-6.0.0.patched/configure
+--- ffmpeg-6.0.0/configure	2023-02-27 15:43:45.000000000 -0500
++++ ffmpeg-6.0.0.patched/configure	2023-06-02 14:12:17.056908840 -0400
+@@ -1165,8 +1165,8 @@
+     log test_ld "$@"
+     type=$1
+     shift 1
+-    flags=$(filter_out '-l*|*.so' $@)
+-    libs=$(filter '-l*|*.so' $@)
++    flags=$(filter_out '-l*|*.so|*.a' $@)
++    libs=$(filter '-l*|*.so|*.a' $@)
+     test_$type $($cflags_filter $flags) || return
+     flags=$($ldflags_filter $flags)
+     libs=$($ldflags_filter $libs)
+@@ -3826,7 +3826,7 @@
+ swscale_deps="avutil"
+ swscale_suggest="libm stdatomic"
+ 
+-avcodec_extralibs="pthreads_extralibs iconv_extralibs dxva2_extralibs lcms2_extralibs"
++avcodec_extralibs="pthreads_extralibs iconv_extralibs dxva2_extralibs lcms2_extralibs lame_extralibs"
+ avfilter_extralibs="pthreads_extralibs"
+ avutil_extralibs="d3d11va_extralibs nanosleep_extralibs pthreads_extralibs vaapi_drm_extralibs vaapi_x11_extralibs vdpau_x11_extralibs"
+ 
+@@ -3835,12 +3835,14 @@
+ ffmpeg_select="aformat_filter anull_filter atrim_filter format_filter
+                hflip_filter null_filter
+                transpose_filter trim_filter vflip_filter"
++ffmpeg_extralibs="lame_extralibs"
+ ffmpeg_suggest="ole32 psapi shell32"
+ ffplay_deps="avcodec avformat swscale swresample sdl2"
+ ffplay_select="rdft crop_filter transpose_filter hflip_filter vflip_filter rotate_filter"
+ ffplay_suggest="shell32"
+ ffprobe_deps="avcodec avformat"
+ ffprobe_suggest="shell32"
++ffprobe_extralibs="lame_extralibs"
+ 
+ # documentation
+ podpages_deps="perl"
+@@ -5545,7 +5547,7 @@
+     darwin)
+         enabled ppc && add_asflags -force_cpusubtype_ALL
+         install_name_dir_default='$(SHLIBDIR)'
+-        SHFLAGS='-dynamiclib -Wl,-single_module -Wl,-install_name,$(INSTALL_NAME_DIR)/$(SLIBNAME_WITH_MAJOR),-current_version,$(LIBVERSION),-compatibility_version,$(LIBMAJOR)'
++        SHFLAGS='-dynamiclib -Wl,-single_module -Wl,-install_name,$(INSTALL_NAME_DIR)/$(SLIBNAME),-current_version,$(LIBVERSION),-compatibility_version,$(LIBMAJOR)'
+         enabled x86_32 && append SHFLAGS -Wl,-read_only_relocs,suppress
+         strip="${strip} -x"
+         add_ldflags -Wl,-dynamic,-search_paths_first
+@@ -6518,7 +6520,8 @@
+ 
+ enabled  zlib && { check_pkg_config zlib zlib "zlib.h" zlibVersion ||
+                    check_lib zlib   zlib.h      zlibVersion    -lz; }
+-enabled bzlib && check_lib bzlib bzlib.h BZ2_bzlibVersion    -lbz2
++enabled  bzlib && { check_pkg_config bzlib bzlib "bzlib.h" BZ2_bzlibVersion ||
++                    check_lib bzlib   bzlib.h      BZ2_bzlibVersion    -lbz2; }
+ enabled  lzma && check_lib lzma   lzma.h lzma_version_number -llzma
+ 
+ enabled zlib && test_exec $zlib_extralibs <<EOF && enable zlib_gzip
+@@ -6641,7 +6644,7 @@
+ fi
+ 
+ enabled libmodplug        && require_pkg_config libmodplug libmodplug libmodplug/modplug.h ModPlug_Load
+-enabled libmp3lame        && require "libmp3lame >= 3.98.3" lame/lame.h lame_set_VBR_quality -lmp3lame $libm_extralibs
++enabled libmp3lame        && require_pkg_config lame lame lame/lame.h lame_set_VBR_quality
+ enabled libmysofa         && { check_pkg_config libmysofa libmysofa mysofa.h mysofa_neighborhood_init_withstepdefine ||
+                                require libmysofa mysofa.h mysofa_neighborhood_init_withstepdefine -lmysofa $zlib_extralibs; }
+ enabled libnpp            && { check_lib libnpp npp.h nppGetLibVersion -lnppig -lnppicc -lnppc -lnppidei -lnppif ||
+@@ -7054,9 +7057,7 @@
+     check_type "ffnvcodec/dynlink_cuda.h ffnvcodec/dynlink_cuviddec.h" "CUVIDAV1PICPARAMS"
+ fi
+ 
+-enabled amf &&
+-    check_cpp_condition amf "AMF/core/Version.h" \
+-        "(AMF_VERSION_MAJOR << 48 | AMF_VERSION_MINOR << 32 | AMF_VERSION_RELEASE << 16 | AMF_VERSION_BUILD_NUM) >= 0x00010004001c0000"
++enabled amf        && require_pkg_config amf amf AMF/core/Version.h AMF_VERSION_MAJOR
+ 
+ # Funny iconv installations are not unusual, so check it after all flags have been set
+ if enabled libc_iconv; then
+@@ -7065,7 +7066,11 @@
+     check_func_headers iconv.h iconv || check_lib iconv iconv.h iconv -liconv
+ fi
+ 
+-enabled debug && add_cflags -g"$debuglevel" && add_asflags -g"$debuglevel"
++if [ "$toolchain" = "msvc" ]; then
++    enabled debug && add_cflags /Z7 && add_asflags /Z7
++else
++    enabled debug && add_cflags -g"$debuglevel" && add_asflags -g"$debuglevel"
++fi
+ 
+ # add some useful compiler flags if supported
+ check_cflags -Wdeclaration-after-statement
+@@ -7296,7 +7301,7 @@
+ elif enabled_any msvc icl; then
+     enabled x86_32 && disable aligned_stack
+     enabled_all x86_32 debug && add_cflags -Oy-
+-    enabled debug && add_ldflags -debug
++    enabled debug && add_ldflags -debug:fastlink
+     enable pragma_deprecated
+     if enabled icl; then
+         # -Qansi-alias is basically -fstrict-aliasing, but does not work
+--- ffmpeg-6.0.0/fftools/opt_common.c	2023-06-13 17:35:27.121672444 -0400
++++ ffmpeg-6.0.0.patched/fftools/opt_common.c	2023-06-13 17:58:33.657940800 -0400
+@@ -205,7 +205,14 @@
+     av_log(NULL, level, "\n");
+     av_log(NULL, level, "%sbuilt with %s\n", indent, CC_IDENT);
+ 
+-    av_log(NULL, level, "%sconfiguration: " FFMPEG_CONFIGURATION "\n", indent);
++    // Due to the large number of configuration options that we utilize,
++    // terminals can be completely filled with just the configuration options
++    // when the user executes ffmpeg or ffprobe. Because of this, and because
++    // we know which configuration options were used in a given copy of Houdini,
++    // we can safely disable the line below. The information can still be found
++    // if necessary by passing -buildconf to the executable.
++
++    // av_log(NULL, level, "%sconfiguration: " FFMPEG_CONFIGURATION "\n", indent);
+ }
+ 
+ static void print_buildconf(int flags, int level)
+diff -ru ffmpeg-6.0.0/libavcodec/nvenc.c ffmpeg-6.0.0.patched/libavcodec/nvenc.c
+--- ffmpeg-6.0.0/libavcodec/nvenc.c	2023-06-16 16:37:21.754701586 -0400
++++ ffmpeg-6.0.0.patched/libavcodec/nvenc.c	2023-06-16 16:36:48.879799669 -0400
+@@ -178,6 +178,8 @@
+ {
+     FrameData fd;
+ 
++    av_assert0(queue);
++
+     while (av_fifo_read(queue, &fd, 1) >= 0)
+         av_buffer_unref(&fd.frame_opaque_ref);
+ }
+@@ -1853,7 +1855,11 @@
+         p_nvenc->nvEncEncodePicture(ctx->nvencoder, &params);
+     }
+ 
+-    reorder_queue_flush(ctx->reorder_queue);
++    if (ctx->reorder_queue) {
++        reorder_queue_flush(ctx->reorder_queue);
++        av_fifo_freep2(&ctx->reorder_queue);
++    }
++
+     av_fifo_freep2(&ctx->reorder_queue);
+     av_fifo_freep2(&ctx->output_surface_ready_queue);
+     av_fifo_freep2(&ctx->output_surface_queue);
