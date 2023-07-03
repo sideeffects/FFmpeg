@@ -205,7 +205,14 @@ static void print_program_info(int flags, int level)
     av_log(NULL, level, "\n");
     av_log(NULL, level, "%sbuilt with %s\n", indent, CC_IDENT);
 
-    av_log(NULL, level, "%sconfiguration: " FFMPEG_CONFIGURATION "\n", indent);
+    // Due to the large number of configuration options that we utilize,
+    // terminals can be completely filled with just the configuration options
+    // when the user executes ffmpeg or ffprobe. Because of this, and because
+    // we know which configuration options were used in a given copy of Houdini,
+    // we can safely disable the line below. The information can still be found
+    // if necessary by passing -buildconf to the executable.
+
+    // av_log(NULL, level, "%sconfiguration: " FFMPEG_CONFIGURATION "\n", indent);
 }
 
 static void print_buildconf(int flags, int level)
