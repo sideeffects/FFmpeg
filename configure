@@ -1165,8 +1165,8 @@ test_ld(){
     log test_ld "$@"
     type=$1
     shift 1
-    flags=$(filter_out '-l*|*.so' $@)
-    libs=$(filter '-l*|*.so' $@)
+    flags=$(filter_out '-l*|*.so|*.a' $@)
+    libs=$(filter '-l*|*.so|*.a' $@)
     test_$type $($cflags_filter $flags) || return
     flags=$($ldflags_filter $flags)
     libs=$($ldflags_filter $libs)
