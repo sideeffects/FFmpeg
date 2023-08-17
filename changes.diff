@@ -140,3 +140,21 @@ diff -ru ffmpeg-6.0.0/libavcodec/nvenc.c ffmpeg-6.0.0.patched/libavcodec/nvenc.c
      av_fifo_freep2(&ctx->reorder_queue);
      av_fifo_freep2(&ctx->output_surface_ready_queue);
      av_fifo_freep2(&ctx->output_surface_queue);
+diff -ru ffmpeg-6.0.0/configure ffmpeg-6.0.0.patched/configure
+--- ffmpeg-6.0.0/configure      2023-08-17 16:05:56.928536169 -0400
++++ ffmpeg-6.0.0.patched/configure      2023-08-17 16:13:56.180889718 -0400
+@@ -6518,11 +6515,9 @@
+     fi
+ fi
+
+-enabled  zlib && { check_pkg_config zlib zlib "zlib.h" zlibVersion ||
+-                   check_lib zlib   zlib.h      zlibVersion    -lz; }
+-enabled  bzlib && { check_pkg_config bzlib bzlib "bzlib.h" BZ2_bzlibVersion ||
+-                    check_lib bzlib   bzlib.h      BZ2_bzlibVersion    -lbz2; }
+-enabled  lzma && check_lib lzma   lzma.h lzma_version_number -llzma
++enabled  zlib  && { check_pkg_config zlib zlib "zlib.h" zlibVersion; }
++enabled  bzlib && { check_pkg_config bzlib bzlib "bzlib.h" BZ2_bzlibVersion; }
++enabled  lzma  && { check_pkg_config lzma lzma "lzma.h" lzma_version_number; }
+
+ enabled zlib && test_exec $zlib_extralibs <<EOF && enable zlib_gzip
+ #include <zlib.h>
