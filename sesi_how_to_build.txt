@@ -36,6 +36,6 @@ cp -a install/bin/ffmpeg  /tmp/ffmpeg/bin/hffmpeg
 cp -a install/bin/ffprobe /tmp/ffmpeg/bin/hffprobe
 
 macOS:
-    python3 sesi_binary_repather.py install /tmp/ffmpeg/bin/hffmpeg
-    python3 sesi_binary_repather.py install /tmp/ffmpeg/bin/hffprobe
+    python3 sesi_binary_repather.py install/lib /tmp/ffmpeg/bin/hffmpeg
+    python3 sesi_binary_repather.py install/lib /tmp/ffmpeg/bin/hffprobe
 
