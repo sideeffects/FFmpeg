@@ -1,7 +1,8 @@
-diff -ru ffmpeg-6.0.0/configure ffmpeg-6.0.0.patched/configure
---- ffmpeg-6.0.0/configure	2023-02-27 15:43:45.000000000 -0500
-+++ ffmpeg-6.0.0.patched/configure	2023-06-02 14:12:17.056908840 -0400
-@@ -1165,8 +1165,8 @@
+diff --git a/configure b/configure
+index d77a55b653..b61f9c2805 100755
+--- a/configure
++++ b/configure
+@@ -1217,8 +1217,8 @@ test_ld(){
      log test_ld "$@"
      type=$1
      shift 1
@@ -12,31 +13,31 @@ diff -ru ffmpeg-6.0.0/configure ffmpeg-6.0.0.patched/configure
      test_$type $($cflags_filter $flags) || return
      flags=$($ldflags_filter $flags)
      libs=$($ldflags_filter $libs)
-@@ -3826,7 +3826,7 @@
+@@ -4042,7 +4042,7 @@ swresample_suggest="libm libsoxr stdatomic"
  swscale_deps="avutil"
  swscale_suggest="libm stdatomic"
  
 -avcodec_extralibs="pthreads_extralibs iconv_extralibs dxva2_extralibs lcms2_extralibs"
 +avcodec_extralibs="pthreads_extralibs iconv_extralibs dxva2_extralibs lcms2_extralibs lame_extralibs"
  avfilter_extralibs="pthreads_extralibs"
- avutil_extralibs="d3d11va_extralibs nanosleep_extralibs pthreads_extralibs vaapi_drm_extralibs vaapi_x11_extralibs vdpau_x11_extralibs"
+ avutil_extralibs="d3d11va_extralibs d3d12va_extralibs mediacodec_extralibs nanosleep_extralibs pthreads_extralibs vaapi_drm_extralibs vaapi_x11_extralibs vaapi_win32_extralibs vdpau_x11_extralibs"
  
-@@ -3835,12 +3835,14 @@
- ffmpeg_select="aformat_filter anull_filter atrim_filter format_filter
-                hflip_filter null_filter
+@@ -4051,12 +4051,14 @@ ffmpeg_deps="avcodec avfilter avformat threads"
+ ffmpeg_select="aformat_filter anull_filter atrim_filter crop_filter
+                format_filter hflip_filter null_filter rotate_filter
                 transpose_filter trim_filter vflip_filter"
 +ffmpeg_extralibs="lame_extralibs"
  ffmpeg_suggest="ole32 psapi shell32"
- ffplay_deps="avcodec avformat swscale swresample sdl2"
- ffplay_select="rdft crop_filter transpose_filter hflip_filter vflip_filter rotate_filter"
- ffplay_suggest="shell32"
+ ffplay_deps="avcodec avformat avfilter swscale swresample sdl2"
+ ffplay_select="crop_filter transpose_filter hflip_filter vflip_filter rotate_filter"
+ ffplay_suggest="shell32 libplacebo vulkan"
  ffprobe_deps="avcodec avformat"
  ffprobe_suggest="shell32"
 +ffprobe_extralibs="lame_extralibs"
  
  # documentation
  podpages_deps="perl"
-@@ -5545,7 +5547,7 @@
+@@ -5781,7 +5783,7 @@ case $target_os in
      darwin)
          enabled ppc && add_asflags -force_cpusubtype_ALL
          install_name_dir_default='$(SHLIBDIR)'
@@ -45,17 +46,21 @@ diff -ru ffmpeg-6.0.0/configure ffmpeg-6.0.0.patched/configure
          enabled x86_32 && append SHFLAGS -Wl,-read_only_relocs,suppress
          strip="${strip} -x"
          add_ldflags -Wl,-dynamic,-search_paths_first
-@@ -6518,7 +6520,8 @@
+@@ -6818,10 +6820,9 @@ if ! disabled pthreads && ! enabled w32threads && ! enabled os2threads; then
+     fi
+ fi
  
- enabled  zlib && { check_pkg_config zlib zlib "zlib.h" zlibVersion ||
-                    check_lib zlib   zlib.h      zlibVersion    -lz; }
+-enabled  zlib && { check_pkg_config zlib zlib "zlib.h" zlibVersion ||
+-                   check_lib zlib   zlib.h      zlibVersion    -lz; }
 -enabled bzlib && check_lib bzlib bzlib.h BZ2_bzlibVersion    -lbz2
-+enabled  bzlib && { check_pkg_config bzlib bzlib "bzlib.h" BZ2_bzlibVersion ||
-+                    check_lib bzlib   bzlib.h      BZ2_bzlibVersion    -lbz2; }
- enabled  lzma && check_lib lzma   lzma.h lzma_version_number -llzma
+-enabled  lzma && check_lib lzma   lzma.h lzma_version_number -llzma
++enabled  zlib  && { check_pkg_config zlib zlib "zlib.h" zlibVersion; }
++enabled  bzlib && { check_pkg_config bzlib bzlib "bzlib.h" BZ2_bzlibVersion; }
++enabled  lzma  && { check_pkg_config lzma lzma "lzma.h" lzma_version_number; }
  
  enabled zlib && test_exec $zlib_extralibs <<EOF && enable zlib_gzip
-@@ -6641,7 +6644,7 @@
+ #include <zlib.h>
+@@ -6950,7 +6951,7 @@ if enabled libmfx; then
  fi
  
  enabled libmodplug        && require_pkg_config libmodplug libmodplug libmodplug/modplug.h ModPlug_Load
@@ -64,18 +69,18 @@ diff -ru ffmpeg-6.0.0/configure ffmpeg-6.0.0.patched/configure
  enabled libmysofa         && { check_pkg_config libmysofa libmysofa mysofa.h mysofa_neighborhood_init_withstepdefine ||
                                 require libmysofa mysofa.h mysofa_neighborhood_init_withstepdefine -lmysofa $zlib_extralibs; }
  enabled libnpp            && { check_lib libnpp npp.h nppGetLibVersion -lnppig -lnppicc -lnppc -lnppidei -lnppif ||
-@@ -7054,9 +7057,7 @@
+@@ -7395,9 +7396,7 @@ if enabled_any nvdec cuvid; then
      check_type "ffnvcodec/dynlink_cuda.h ffnvcodec/dynlink_cuviddec.h" "CUVIDAV1PICPARAMS"
  fi
  
 -enabled amf &&
 -    check_cpp_condition amf "AMF/core/Version.h" \
--        "(AMF_VERSION_MAJOR << 48 | AMF_VERSION_MINOR << 32 | AMF_VERSION_RELEASE << 16 | AMF_VERSION_BUILD_NUM) >= 0x00010004001c0000"
-+enabled amf        && require_pkg_config amf amf AMF/core/Version.h AMF_VERSION_MAJOR
+-        "(AMF_VERSION_MAJOR << 48 | AMF_VERSION_MINOR << 32 | AMF_VERSION_RELEASE << 16 | AMF_VERSION_BUILD_NUM) >= 0x0001000400210000"
++enabled amf && require_pkg_config amf amf AMF/core/Version.h AMF_VERSION_MAJOR
  
  # Funny iconv installations are not unusual, so check it after all flags have been set
  if enabled libc_iconv; then
-@@ -7065,7 +7066,11 @@
+@@ -7406,7 +7405,11 @@ elif enabled iconv; then
      check_func_headers iconv.h iconv || check_lib iconv iconv.h iconv -liconv
  fi
  
@@ -88,7 +93,7 @@ diff -ru ffmpeg-6.0.0/configure ffmpeg-6.0.0.patched/configure
  
  # add some useful compiler flags if supported
  check_cflags -Wdeclaration-after-statement
-@@ -7296,7 +7301,7 @@
+@@ -7646,7 +7649,7 @@ elif enabled pathscale; then
  elif enabled_any msvc icl; then
      enabled x86_32 && disable aligned_stack
      enabled_all x86_32 debug && add_cflags -Oy-
@@ -97,9 +102,11 @@ diff -ru ffmpeg-6.0.0/configure ffmpeg-6.0.0.patched/configure
      enable pragma_deprecated
      if enabled icl; then
          # -Qansi-alias is basically -fstrict-aliasing, but does not work
---- ffmpeg-6.0.0/fftools/opt_common.c	2023-06-13 17:35:27.121672444 -0400
-+++ ffmpeg-6.0.0.patched/fftools/opt_common.c	2023-06-13 17:58:33.657940800 -0400
-@@ -205,7 +205,14 @@
+diff --git a/fftools/opt_common.c b/fftools/opt_common.c
+index 021ed75272..71cfddd798 100644
+--- a/fftools/opt_common.c
++++ b/fftools/opt_common.c
+@@ -205,7 +205,14 @@ static void print_program_info(int flags, int level)
      av_log(NULL, level, "\n");
      av_log(NULL, level, "%sbuilt with %s\n", indent, CC_IDENT);
  
@@ -115,46 +122,86 @@ diff -ru ffmpeg-6.0.0/configure ffmpeg-6.0.0.patched/configure
  }
  
  static void print_buildconf(int flags, int level)
-diff -ru ffmpeg-6.0.0/libavcodec/nvenc.c ffmpeg-6.0.0.patched/libavcodec/nvenc.c
---- ffmpeg-6.0.0/libavcodec/nvenc.c	2023-06-16 16:37:21.754701586 -0400
-+++ ffmpeg-6.0.0.patched/libavcodec/nvenc.c	2023-06-16 16:36:48.879799669 -0400
-@@ -178,6 +178,8 @@
- {
-     FrameData fd;
- 
-+    av_assert0(queue);
+diff --git a/sesi_binary_repather.py b/sesi_binary_repather.py
+new file mode 100644
+index 0000000000..a2919e12b5
+--- /dev/null
++++ b/sesi_binary_repather.py
+@@ -0,0 +1,30 @@
++import re
++import sys
 +
-     while (av_fifo_read(queue, &fd, 1) >= 0)
-         av_buffer_unref(&fd.frame_opaque_ref);
- }
-@@ -1853,7 +1855,11 @@
-         p_nvenc->nvEncEncodePicture(ctx->nvencoder, &params);
-     }
- 
--    reorder_queue_flush(ctx->reorder_queue);
-+    if (ctx->reorder_queue) {
-+        reorder_queue_flush(ctx->reorder_queue);
-+        av_fifo_freep2(&ctx->reorder_queue);
-+    }
++import subprocess
 +
-     av_fifo_freep2(&ctx->reorder_queue);
-     av_fifo_freep2(&ctx->output_surface_ready_queue);
-     av_fifo_freep2(&ctx->output_surface_queue);
-diff -ru ffmpeg-6.0.0/configure ffmpeg-6.0.0.patched/configure
---- ffmpeg-6.0.0/configure      2023-08-17 16:05:56.928536169 -0400
-+++ ffmpeg-6.0.0.patched/configure      2023-08-17 16:13:56.180889718 -0400
-@@ -6518,11 +6515,9 @@
-     fi
- fi
-
--enabled  zlib && { check_pkg_config zlib zlib "zlib.h" zlibVersion ||
--                   check_lib zlib   zlib.h      zlibVersion    -lz; }
--enabled  bzlib && { check_pkg_config bzlib bzlib "bzlib.h" BZ2_bzlibVersion ||
--                    check_lib bzlib   bzlib.h      BZ2_bzlibVersion    -lbz2; }
--enabled  lzma && check_lib lzma   lzma.h lzma_version_number -llzma
-+enabled  zlib  && { check_pkg_config zlib zlib "zlib.h" zlibVersion; }
-+enabled  bzlib && { check_pkg_config bzlib bzlib "bzlib.h" BZ2_bzlibVersion; }
-+enabled  lzma  && { check_pkg_config lzma lzma "lzma.h" lzma_version_number; }
-
- enabled zlib && test_exec $zlib_extralibs <<EOF && enable zlib_gzip
- #include <zlib.h>
++def main(localdir, binary):
++    # Binaries produced by the FFmpeg build system contain absolute paths to the 
++    # built libaries. This tool rewrites them to work within Houdini.
++    otool_output = subprocess.check_output(['otool', '-L', binary]).decode('utf-8')
++    libraries_to_repath = re.findall(localdir + '/([^/]+\.dylib)', otool_output)
++
++    for library_to_repath in libraries_to_repath:
++        change_from = localdir + '/' + library_to_repath
++        change_to   = '@loader_path/../../Libraries/' + library_to_repath
++
++        cmd = ['install_name_tool', '-change', change_from, change_to, binary]
++        print(' '.join(cmd))
++
++        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
++        proc.communicate()
++
++        if proc.returncode != 0:
++            return 1
++
++    return 0
++
++if __name__ == '__main__':
++    (_, localdir, binary) = sys.argv
++    sys.exit(main(localdir, binary))
++
+diff --git a/sesi_how_to_build.txt b/sesi_how_to_build.txt
+new file mode 100644
+index 0000000000..4ada576c62
+--- /dev/null
++++ b/sesi_how_to_build.txt
+@@ -0,0 +1,41 @@
++Windows (cygwin):
++    cmd /c "C:/PROGRA~1/MICROS~3/2022/PROFES~1/VC/Tools/MSVC/1435~1.322/../../../Auxiliary/Build/vcvars64.bat && C:/cygwin/bin/bash.exe -c 'export' > vcvars.env" && source vcvars.env && rm vcvars.env;
++    ./configure --prefix=install --disable-debug --cc=cl.exe --toolchain=msvc --target-os=win32 --enable-cross-compile --arch=x86_64 --enable-x86asm --x86asmexe=nasm --disable-static --enable-shared --enable-pic --enable-runtime-cpudetect --enable-asm --disable-ffplay --disable-network --disable-doc --extra-cflags=' -MD' --extra-ldsoflags='' --extra-ldexeflags=''; \
++
++macOS:
++    ./configure --prefix=install --disable-debug --target-os=darwin --enable-lto --arch=aarch64 --disable-static --enable-shared --enable-pic --enable-runtime-cpudetect --enable-asm --disable-ffplay --disable-network --disable-doc --extra-cflags='-mmacosx-version-min=10.15 ' --extra-ldsoflags='-Wl,-rpath,@loader_path:@loader_path/../../Libraries -mmacosx-version-min=10.15' --extra-ldexeflags='-Wl,-rpath,@loader_path:@loader_path/../../Libraries -mmacosx-version-min=10.15';
++
++Linux:
++    ./configure --cc=gcc --prefix=install --disable-debug --target-os=linux --enable-lto --disable-static --enable-shared --enable-pic --enable-runtime-cpudetect --enable-asm --disable-ffplay --disable-network --disable-doc --extra-ldsoflags='-Wl,-rpath,\\\$\$\$\$ORIGIN:\\\$\$\$\$ORIGIN/../dsolib' --extra-ldexeflags='-Wl,-rpath,\\\$\$ORIGIN:\\\$\$ORIGIN/../dsolib'
++
++make -j20
++make install
++
++mkdir -p /tmp/ffmpeg/custom/include/ffmpeg
++mkdir -p /tmp/ffmpeg/bin
++
++Windows (cygwin):
++    mkdir -p /tmp/ffmpeg/custom/houdini/dsolib
++    cp -a install/bin/*.dll /tmp/ffmpeg/bin
++    cp -a install/bin/*.lib /tmp/ffmpeg/custom/houdini/dsolib
++
++macOS:
++    mkdir -p /tmp/ffmpeg/dsolib
++    for libname in avdevice avfilter avformat avcodec swresample swscale avutil; do \
++	cp -pL install/lib/lib${libname}.dylib* /tmp/ffmpeg/dsolib || :; \
++    done
++
++Linux:
++    mkdir -p /tmp/ffmpeg/dsolib
++    for libname in avdevice avfilter avformat avcodec swresample swscale avutil; do \
++	cp -pL install/lib/lib${libname}.so* /tmp/ffmpeg/dsolib || :; \
++    done
++
++cp -a install/include/lib* /tmp/ffmpeg/custom/include/ffmpeg
++cp -a install/bin/ffmpeg  /tmp/ffmpeg/bin/hffmpeg
++cp -a install/bin/ffprobe /tmp/ffmpeg/bin/hffprobe
++
++macOS:
++    python3 sesi_binary_repather.py install/lib /tmp/ffmpeg/bin/hffmpeg
++    python3 sesi_binary_repather.py install/lib /tmp/ffmpeg/bin/hffprobe
++
