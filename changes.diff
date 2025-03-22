@@ -205,3 +205,16 @@ index 0000000000..4ada576c62
 +    python3 sesi_binary_repather.py install/lib /tmp/ffmpeg/bin/hffmpeg
 +    python3 sesi_binary_repather.py install/lib /tmp/ffmpeg/bin/hffprobe
 +
+diff --git a/libavdevice/dshow.c b/libavdevice/dshow.c
+index 84db151577..33afc1c4a9 100644
+--- a/libavdevice/dshow.c
++++ b/libavdevice/dshow.c
+@@ -329,7 +329,7 @@ static int shall_we_drop(AVFormatContext *s, int index, enum dshowDeviceType dev
+     const char *devtypename = (devtype == VideoDevice) ? "video" : "audio";
+ 
+     if(dropscore[++ctx->video_frame_num%ndropscores] <= buffer_fullness) {
+-        av_log(s, AV_LOG_ERROR,
++        av_log(s, AV_LOG_WARNING,
+               "real-time buffer [%s] [%s input] too full or near too full (%d%% of size: %d [rtbufsize parameter])! frame dropped!\n",
+               ctx->device_name[devtype], devtypename, buffer_fullness, s->max_picture_buffer);
+         return 1;
