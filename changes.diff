@@ -218,3 +218,17 @@ index 84db151577..33afc1c4a9 100644
                "real-time buffer [%s] [%s input] too full or near too full (%d%% of size: %d [rtbufsize parameter])! frame dropped!\n",
                ctx->device_name[devtype], devtypename, buffer_fullness, s->max_picture_buffer);
          return 1;
+diff --git a/libavcodec/mjpegdec.c b/libavcodec/mjpegdec.c
+index 86ec58713c..69fc670e31 100644
+--- a/libavcodec/mjpegdec.c
++++ b/libavcodec/mjpegdec.c
+@@ -2431,7 +2431,7 @@ redo_for_pal8:
+             /* APP fields */
+         } else if (start_code >= APP0 && start_code <= APP15) {
+             if ((ret = mjpeg_decode_app(s)) < 0)
+-                av_log(avctx, AV_LOG_ERROR, "unable to decode APP fields: %s\n",
++                av_log(avctx, AV_LOG_WARNING, "unable to decode APP fields: %s\n",
+                        av_err2str(ret));
+             /* Comment */
+         } else if (start_code == COM) {
+
