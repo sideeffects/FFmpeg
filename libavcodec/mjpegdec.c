@@ -2431,7 +2431,7 @@ redo_for_pal8:
             /* APP fields */
         } else if (start_code >= APP0 && start_code <= APP15) {
             if ((ret = mjpeg_decode_app(s)) < 0)
-                av_log(avctx, AV_LOG_ERROR, "unable to decode APP fields: %s\n",
+                av_log(avctx, AV_LOG_WARNING, "unable to decode APP fields: %s\n",
                        av_err2str(ret));
             /* Comment */
         } else if (start_code == COM) {
